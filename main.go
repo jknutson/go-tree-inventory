@@ -3,9 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 )
@@ -18,31 +20,58 @@ type application struct {
 	DB *pgxpool.Pool
 }
 
+type PageData struct {
+	HasFlashMessage   bool
+	FlashMessageText  string
+	FlashMessageClass string
+}
+
 func (app *application) index(w http.ResponseWriter, req *http.Request) {
+
+	tmpl := template.Must(template.ParseFiles("index.html.tmpl"))
+
 	switch req.Method {
 	case "GET":
-		http.ServeFile(w, req, "html/index.html")
-	case "POST":
-		// Call ParseForm() to parse the raw query and update r.PostForm and r.Form.
-		if err := req.ParseForm(); err != nil {
-			fmt.Fprintf(w, "ParseForm() err: %v", err)
-			return
+		pageData := PageData{
+			HasFlashMessage: false,
 		}
-
-		fmt.Fprintf(w, "Post from website! req.PostFrom = %v\n", req.PostForm)
-		inputTreeType := req.FormValue("inputTreeType")
-		inputTreeLocation := req.FormValue("inputTreeLocation")
-		fmt.Fprintf(w, "Type = %s\n", inputTreeType)
-		fmt.Fprintf(w, "Location = %s\n", inputTreeLocation)
-
-		sqlStatement := `
-		INSERT INTO tree_inventory_v1 (type, location)
-		VALUES ($1, $2)`
-		_, err := app.DB.Exec(context.Background(), sqlStatement, inputTreeType, inputTreeLocation)
+		err := tmpl.Execute(w, pageData)
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Fprintf(w, "Record inserted to database\n")
+		// http.ServeFile(w, req, "html/index.html")
+	case "POST":
+		var pageErrors []string
+		// Call ParseForm() to parse the raw query and update r.PostForm and r.Form.
+		if parseFormErr := req.ParseForm(); parseFormErr != nil {
+			pageErrors = append(pageErrors, fmt.Sprintf("ParseForm() err: %v", parseFormErr))
+		}
+
+		// TODO: render template with flash
+		inputTreeType := req.FormValue("inputTreeType")
+		inputTreeLocation := req.FormValue("inputTreeLocation")
+
+		// TODO: update sql to insert geom/make_point
+		sqlStatement := `
+INSERT INTO tree_inventory_v1 (type, location)
+		VALUES ($1, $2)`
+		_, sqlErr := app.DB.Exec(context.Background(), sqlStatement, inputTreeType, inputTreeLocation)
+		if sqlErr != nil {
+			pageErrors = append(pageErrors, fmt.Sprintf("SQL insert err: %v", sqlErr))
+		}
+		pageData := PageData{
+			HasFlashMessage:   true,
+			FlashMessageClass: "alert-primary",
+		}
+		if len(pageErrors) > 0 {
+			pageData.FlashMessageClass = "alert-danger"
+			pageData.FlashMessageText = strings.Join(pageErrors, "\n")
+		} else {
+			pageData.FlashMessageText = "Record inserted!"
+		}
+		if tmplErr := tmpl.Execute(w, pageData); tmplErr != nil {
+			fmt.Fprintf(w, "template err: %v", tmplErr)
+		}
 
 	default:
 		fmt.Fprintf(w, "Sorry, only GET and POST methods are supported.")
