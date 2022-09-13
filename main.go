@@ -37,9 +37,10 @@ func (app *application) index(w http.ResponseWriter, req *http.Request) {
 		}
 		err := tmpl.Execute(w, pageData)
 		if err != nil {
-			log.Fatal(err)
+			logMessage := fmt.Sprintf("template render error: %v\n", err)
+			log.Print(logMessage)
+			fmt.Fprint(w, err)
 		}
-		// http.ServeFile(w, req, "html/index.html")
 	case "POST":
 		var pageErrors []string
 		// Call ParseForm() to parse the raw query and update r.PostForm and r.Form.
@@ -47,7 +48,6 @@ func (app *application) index(w http.ResponseWriter, req *http.Request) {
 			pageErrors = append(pageErrors, fmt.Sprintf("ParseForm() err: %v", parseFormErr))
 		}
 
-		// TODO: render template with flash
 		inputTreeType := req.FormValue("inputTreeType")
 		inputTreeLocation := req.FormValue("inputTreeLocation")
 
@@ -59,6 +59,7 @@ INSERT INTO tree_inventory_v1 (type, location)
 		if sqlErr != nil {
 			pageErrors = append(pageErrors, fmt.Sprintf("SQL insert err: %v", sqlErr))
 		}
+
 		pageData := PageData{
 			HasFlashMessage:   true,
 			FlashMessageClass: "alert-primary",
@@ -78,16 +79,7 @@ INSERT INTO tree_inventory_v1 (type, location)
 	}
 }
 
-func headers(w http.ResponseWriter, req *http.Request) {
-	for name, headers := range req.Header {
-		for _, h := range headers {
-			fmt.Fprintf(w, "%v: %v\n", name, h)
-		}
-	}
-}
-
 func main() {
-
 	// urlExample := "postgres://username:password@localhost:5432/database_name"
 	databaseUrl, isSet := os.LookupEnv("DATABASE_URL")
 	if !isSet {
@@ -105,7 +97,6 @@ func main() {
 	}
 
 	http.HandleFunc("/", app.index)
-	http.HandleFunc("/headers", headers)
 
 	log.Printf("listening on %s\n", listenerPort)
 	// log.Fatal(http.ListenAndServe(listenerPort, nil))
