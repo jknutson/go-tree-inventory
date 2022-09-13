@@ -1,4 +1,4 @@
-module github.com/jknutson/go-http-listener
+module github.com/jknutson/go-tree-inventory
 
 go 1.19
 
