@@ -16,6 +16,8 @@ var listenerPort = ":8090"
 var tlsCert = "ssl/cert.pem"
 var tlsKey = "ssl/key.pem"
 
+var gisSRID = 4269
+
 type application struct {
 	DB *pgxpool.Pool
 }
@@ -43,27 +45,36 @@ func (app *application) index(w http.ResponseWriter, req *http.Request) {
 		}
 	case "POST":
 		var pageErrors []string
+		pageData := PageData{
+			HasFlashMessage:   true,
+			FlashMessageClass: "alert-primary",
+		}
+
 		// Call ParseForm() to parse the raw query and update r.PostForm and r.Form.
 		if parseFormErr := req.ParseForm(); parseFormErr != nil {
 			pageErrors = append(pageErrors, fmt.Sprintf("ParseForm() err: %v", parseFormErr))
 		}
 
 		inputTreeType := req.FormValue("inputTreeType")
+		inputTreeDiameter := req.FormValue("inputTreeDiameter")
+		inputTreeDripline := req.FormValue("inputTreeDripline")
 		inputTreeLocation := req.FormValue("inputTreeLocation")
+		treeCoords := strings.Split(inputTreeLocation, ",")
+		if len(treeCoords) < 2 {
+			pageErrors = append(pageErrors, fmt.Sprintf("Could not parse coordinates: %v", inputTreeLocation))
+		} else {
 
-		// TODO: update sql to insert geom/make_point
-		sqlStatement := `
-INSERT INTO tree_inventory_v1 (type, location)
-		VALUES ($1, $2)`
-		_, sqlErr := app.DB.Exec(context.Background(), sqlStatement, inputTreeType, inputTreeLocation)
-		if sqlErr != nil {
-			pageErrors = append(pageErrors, fmt.Sprintf("SQL insert err: %v", sqlErr))
+			// TODO: update sql to insert geom/make_point
+			sqlStatement := `
+	INSERT INTO tree_inventory_v2 (type, diameter_breast_height_inches, diameter_dripline_feet, geom)
+		VALUES ($1, $2, $3, ST_SetSRID(ST_MakePoint($4, $5), $6));
+	`
+			_, sqlErr := app.DB.Exec(context.Background(), sqlStatement, inputTreeType, inputTreeDiameter, inputTreeDripline, treeCoords[1], treeCoords[0], gisSRID)
+			if sqlErr != nil {
+				pageErrors = append(pageErrors, fmt.Sprintf("SQL insert error: %v", sqlErr))
+			}
 		}
 
-		pageData := PageData{
-			HasFlashMessage:   true,
-			FlashMessageClass: "alert-primary",
-		}
 		if len(pageErrors) > 0 {
 			pageData.FlashMessageClass = "alert-danger"
 			pageData.FlashMessageText = strings.Join(pageErrors, "\n")
