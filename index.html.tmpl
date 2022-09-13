@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html class="no-js" lang="">
+
+<head>
+  <meta charset="utf-8">
+  <title>Tree Inventory</title>
+  <meta name="description" content="">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <meta property="og:title" content="">
+  <meta property="og:type" content="">
+  <meta property="og:url" content="">
+  <meta property="og:image" content="">
+
+  <!-- TODO: serve these files -->
+  <link rel="manifest" href="site.webmanifest">
+  <link rel="apple-touch-icon" href="icon.png">
+  <!-- Place favicon.ico in the root directory -->
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-iYQeCzEYFbKjA/T2uDLTpkwGzCiq6soy8tYaI1GyVh/UjpbCx/TYkiZhlZB6+fzT" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.3.0/font/bootstrap-icons.css">
+
+  <meta name="theme-color" content="#fafafa">
+</head>
+
+<body>
+  <div class="container text-center">
+    <div class="row justify-content-center">
+      <div class="col-md-5">
+        {{if .HasFlashMessage}}
+          <!-- TODO: add a margin/buffer above this -->
+          <div class="alert {{.FlashMessageClass}} alert-dismissible fade show" role="alert">
+            {{.FlashMessageText}}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div> 
+        {{end}}
+        <h1>Tree Inventory</h1>
+      </div>
+    </div>
+  </div>
+  <div class="container text-center">
+    <div class="row justify-content-center">
+      <div class="col-md-6">
+        <form action="/" method="POST">
+          <div class="form-group">
+            <label for="inputTreeType">Tree Type</label>
+            <input type="text" class="form-control" id="inputTreeType" aria-describedby="treeTypeHelp" placeholder="Family, species, etc." name="inputTreeType">
+            <small id="treeTypeHelp" class="form-text text-muted">Be as specific as possible.</small>
+          </div>
+          <br />
+          <div class="form-group">
+            <label for="inputTreeLocation">Location</label>
+            <div class="input-group">
+              <input type="text" class="form-control" id="inputTreeLocation" placeholder="X, Y" aria-label="Location" aria-describedby="buttonLocationHelp" name="inputTreeLocation">
+              <button class="btn btn-outline-secondary" type="button" id="buttonLocation" onclick="getLocation()">
+                <i class="bi bi-geo-fill"></i>
+              </button>
+            </div>
+            <small id="buttonLocationHelp" class="form-text text-muted">Click icon on the right to get GPS coordinates.</small>
+          </div>
+          <br />
+          <div class="form-group">
+            <label for="inputTreeDiameter">Diameter at Breast Height</label>
+            <input type="text" class="form-control" id="inputTreeDiameter" aria-describedby="treeDiameterHelp" placeholder="DBH (inches)" name="inputTreeDiameter">
+            <small id="treeDiameterHelp" class="form-text text-muted">Diameter of trunk at chest height.</small>
+          </div>
+          <br />
+          <div class="form-group">
+            <label for="inputTreeDripline">Tree Type</label>
+            <input type="text" class="form-control" id="inputTreeDripline" aria-describedby="treeDriplineHelp" placeholder="Dripline (feet)" name="inputTreeDripline">
+            <small id="treeDriplineHelp" class="form-text text-muted">Diameter of canopy.</small>
+          </div>
+          <br />
+          <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-u1OknCvxWvY5kfmNBILK2hRnQC3Pr17a+RTT6rIHI7NnikvbZlHgTPOOmMi466C8" crossorigin="anonymous"></script>
+  <script
+    src="https://code.jquery.com/jquery-3.6.1.min.js"
+    integrity="sha256-o88AwQnZB+VDvE9tvIXrMQaPlFFSUTR+nldQm1LuPXQ="
+    crossorigin="anonymous"></script>
+  <!-- Google Analytics: change UA-XXXXX-Y to be your site's ID. -->
+  <!-- TODO: add this
+  <script>
+    window.ga = function () { ga.q.push(arguments) }; ga.q = []; ga.l = +new Date;
+    ga('create', 'UA-XXXXX-Y', 'auto'); ga('set', 'anonymizeIp', true); ga('set', 'transport', 'beacon'); ga('send', 'pageview')
+  </script>
+  <script src="https://www.google-analytics.com/analytics.js" async></script>
+  -->
+  {{if and .HasFlashMessage (ne .FlashMessageClass "alert-danger")}}
+  <script>
+  $(document).ready(function() {
+    setTimeout(function() {
+      $(".alert").alert('close')
+    }, 5000);
+  }); 
+  </script>
+  {{end}}
+  <!-- HTML5 GeoLocation -->
+  <script>
+  // if (navigator && navigator.geolocation) { alert("geolocation supported!"); }
+
+
+  var x = document.getElementById("inputTreeLocation");
+  function getLocation() {
+    if (navigator.geolocation) {
+      x.value = "Getting position..."
+      navigator.geolocation.getCurrentPosition(geoSuccess, geoError);
+    } else {
+      x.value = "Geolocation not available";
+    }
+  }
+
+  function geoSuccess(position) {
+    x.value = position.coords.latitude + ", " + position.coords.longitude;
+  }
+  function geoError(positionError) {
+    alert(positionError.message);
+    x.value = positionError.message;
+  }
+  // getLocation();
+  </script>
+</body>
+
+</html>
