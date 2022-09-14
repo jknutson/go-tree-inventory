@@ -21,6 +21,11 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.3.0/font/bootstrap-icons.css">
 
   <meta name="theme-color" content="#fafafa">
+  <style>
+  div.header-alert {
+    margin-top: 16px;
+  }
+  </style>
 </head>
 
 <body>
@@ -28,8 +33,7 @@
     <div class="row justify-content-center">
       <div class="col-md-5">
         {{if .HasFlashMessage}}
-          <!-- TODO: add a margin/buffer above this -->
-          <div class="alert {{.FlashMessageClass}} alert-dismissible fade show" role="alert">
+          <div class="alert {{.FlashMessageClass}} alert-dismissible fade show header-alert" role="alert">
             {{.FlashMessageText}}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
           </div> 
